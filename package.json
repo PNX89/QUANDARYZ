@@ -8,8 +8,7 @@
     "test": "vitest run --project dom",
     "test:browser": "vitest run --project browser",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
-    "explore": "vitest run test/explore.test.tsx"
+    "demo": "vitest run --project demo"
   },
   "devDependencies": {
     "@reduxjs/toolkit": "2.12.0",

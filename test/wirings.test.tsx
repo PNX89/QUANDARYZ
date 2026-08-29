@@ -55,7 +55,7 @@ function scheduled(scheduler: fc.Scheduler): Transport {
  */
 const FULLY_SCHEDULED: ReadonlySet<WiringName> = new Set(['effect-guarded', 'effect-unguarded'])
 
-async function cardinality(wiring: WiringName, runs = 30): Promise<number> {
+async function cardinality(wiring: WiringName, runs = 40): Promise<number> {
   const found = await explore(async (scheduler) => {
     const transport = scheduled(scheduler)
     const client = freshClient()
@@ -123,7 +123,7 @@ describe('the wiring matrix', () => {
     )
     writeFileSync(
       'docs/evidence/wirings.json',
-      `${JSON.stringify({ runs: 30, seed: 7, repeats: 3, wirings: committed }, null, 2)}\n`,
+      `${JSON.stringify({ runs: 40, seed: 7, repeats: 3, wirings: committed }, null, 2)}\n`,
     )
 
     expect(Object.keys(table)).toHaveLength(4)
