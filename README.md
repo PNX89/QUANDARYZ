@@ -8,6 +8,9 @@ the answer is 4, and every figure on every one of them was computed and sent by 
 [![Node](https://img.shields.io/badge/node-24-blue)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
+![A real run: one distinct screen with the guard applied, four without it, and a risk panel that
+never tears while rendering a verdict no response body contains.](docs/demo.svg)
+
 <!-- quoted from docs/evidence/demo.txt -->
 ```text
   guarded     1 distinct screen across 40 orderings
@@ -130,6 +133,46 @@ npm run typecheck
 ```
 
 <!-- toolset:start -->
+
+Part of the Q...Z toolset, all of it designing for the failure that does not announce itself:
+
+- [QUACKZ](https://github.com/PNX89/QUACKZ), deflating a backtest that only looks good because
+  it was picked out of two hundred.
+- [QUOTEZ](https://github.com/PNX89/QUOTEZ), market data an agent can read and cannot act on.
+- [QUELLZ](https://github.com/PNX89/QUELLZ), measuring what prompt-injection containment costs
+  in utility as well as in attack rate.
+- [QUIDZ](https://github.com/PNX89/QUIDZ), refusing the outbound payment that would have gone
+  out twice.
+- [QUESTZ](https://github.com/PNX89/QUESTZ), stopping a scraper before it writes a CSV from a
+  page that changed shape.
+- [QUIZZ](https://github.com/PNX89/QUIZZ), answering what a statistic said at the time, and
+  refusing when it cannot.
+- [QUARANTINEZ](https://github.com/PNX89/QUARANTINEZ), treating an outcome the venue never
+  confirmed as terminal rather than as a retry.
+- [QUENCHZ](https://github.com/PNX89/QUENCHZ), deciding in the open what a tool server gets free
+  while it is still somebody's subprocess.
+- [QUILTZ](https://github.com/PNX89/QUILTZ), proving infrastructure code wrong without a cloud
+  account, and saying what that cannot show.
+- [QUAYZ](https://github.com/PNX89/QUAYZ), telling a crash loop from an OOMKill, and naming the
+  failure that no single field finds.
+- [QUARRYZ](https://github.com/PNX89/QUARRYZ), keeping every version a statistical office
+  published, and failing the build when it quietly issues another.
+- [QUASHZ](https://github.com/PNX89/QUASHZ), refusing a row whose outcome had not been decided
+  yet when the decision would have been made.
+- [QUALMZ](https://github.com/PNX89/QUALMZ), a fixed number of looks at the holdout, where
+  re-running the same configuration does not buy another.
+- [QUEUEZ](https://github.com/PNX89/QUEUEZ), ordering a feed by its sequence, because on a real
+  recorded session the clock goes backwards.
+- QUANDARYZ, this one: counting the distinct screens a component can settle into when its
+  responses arrive out of order.
+
+**On QUEUEZ.** QUEUEZ proves a consumer survives the same message arriving twice and in the
+wrong order, on the wire, where the sequence numbers live. This repository asks the same
+question one layer later, where there are no sequence numbers at all: a browser issues three
+requests, they return in any order, and nothing in the responses says which of them the screen
+was built from. The two failures rhyme and the remedies do not: one is an offset in a
+transaction, the other is a count of how many screens a user can be shown.
+
 <!-- toolset:end -->
 
 ## Licence
