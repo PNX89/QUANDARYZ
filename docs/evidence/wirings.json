@@ -1,10 +1,23 @@
 {
   "runs": 30,
   "seed": 7,
-  "cardinality": {
-    "effect-guarded": 1,
-    "effect-unguarded": 4,
-    "query-default": 2,
-    "query-keep-previous": 1
+  "repeats": 3,
+  "wirings": {
+    "effect-guarded": {
+      "cardinality": 1,
+      "fullyScheduled": true
+    },
+    "effect-unguarded": {
+      "cardinality": 4,
+      "fullyScheduled": true
+    },
+    "query-default": {
+      "fullyScheduled": false,
+      "reason": "this library schedules work the explorer does not control, so the count is a lower bound that moves between runs and is not committed"
+    },
+    "query-keep-previous": {
+      "fullyScheduled": false,
+      "reason": "this library schedules work the explorer does not control, so the count is a lower bound that moves between runs and is not committed"
+    }
   }
 }
