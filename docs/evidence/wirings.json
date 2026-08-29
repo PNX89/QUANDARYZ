@@ -1,0 +1,10 @@
+{
+  "runs": 30,
+  "seed": 7,
+  "cardinality": {
+    "effect-guarded": 1,
+    "effect-unguarded": 4,
+    "query-default": 2,
+    "query-keep-previous": 2
+  }
+}

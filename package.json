@@ -12,6 +12,8 @@
     "explore": "vitest run test/explore.test.tsx"
   },
   "devDependencies": {
+    "@reduxjs/toolkit": "2.12.0",
+    "@tanstack/react-query": "5.101.4",
     "@testing-library/dom": "10.4.1",
     "@testing-library/react": "16.3.2",
     "@testing-library/user-event": "14.6.6",
@@ -24,6 +26,7 @@
     "happy-dom": "20.11.6",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "react-redux": "9.2.0",
     "typescript": "6.0.3",
     "vitest": "4.1.11"
   }
