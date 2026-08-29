@@ -17,7 +17,13 @@ export default defineConfig({
     projects: [
       {
         extends: true,
-        test: { name: 'dom', environment: 'happy-dom', include: ['test/**/*.test.tsx'] },
+        test: { name: 'dom', environment: 'happy-dom', include: ['test/**/*.test.ts?(x)'] },
+      },
+      {
+        extends: true,
+        // The demo, run through the same runner as everything else so that what a reader sees
+        // is what CI runs rather than a second code path that happens to print something.
+        test: { name: 'demo', environment: 'happy-dom', include: ['examples/**/*.test.tsx'] },
       },
       {
         extends: true,
