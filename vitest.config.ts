@@ -1,3 +1,4 @@
+import { playwright } from '@vitest/browser-playwright'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
@@ -17,6 +18,32 @@ export default defineConfig({
       {
         extends: true,
         test: { name: 'dom', environment: 'happy-dom', include: ['test/**/*.test.tsx'] },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'browser',
+          // THE SAME SUBJECTS, IN A REAL BROWSER. A repository whose claim is about what a
+          // browser does has demonstrated it about a simulation until it runs in one. happy-dom
+          // is a faithful enough DOM for these fingerprints and it is still somebody's
+          // implementation of a specification, which is exactly the kind of thing this
+          // repository is otherwise careful not to trust.
+          //
+          // CHROMIUM ONLY, and the headless shell rather than the full browser: 82 MB against
+          // the several hundred the default set pulls. One engine is enough to answer whether
+          // the result survives leaving the simulation; three would be answering a different
+          // question about engine differences that nothing here investigates.
+          include: ['test/browser/**/*.test.tsx'],
+          browser: {
+            enabled: true,
+            // A FACTORY, NOT A STRING. Vitest 4 changed this and the string form fails at
+            // startup with a message naming the package to import, which is the good kind of
+            // breaking change: it tells you what to do rather than misbehaving quietly.
+            provider: playwright(),
+            headless: true,
+            instances: [{ browser: 'chromium' }],
+          },
+        },
       },
     ],
   },
