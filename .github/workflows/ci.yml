@@ -1,0 +1,37 @@
+name: CI
+
+# Nothing here needs a credential and nothing here reaches a cloud account.
+#
+# `npm test` runs every subject in happy-dom, installs no browser and reaches nothing outside
+# npm. The same subjects run again in real Chromium in their own job, because a repository whose
+# claim is about what a browser does has demonstrated it about a simulation until it does.
+#
+# NO `schedule:` in any workflow here. Third-party actions are pinned by commit.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: types and the subjects, in a simulated DOM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v5.0.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: one type checker, and prove it
+        # `npm ls typescript` is the check a reviewer would run, so it is the check that runs
+        # here. A repository whose subject is judgement cannot carry two type checkers.
+        run: |
+          npm ls typescript
+          test "$(npm ls typescript --json | node -e 'const d=JSON.parse(require("fs").readFileSync(0));console.log(d.dependencies.typescript.version)')" = "6.0.3"
+      - run: npm run typecheck
+      - run: npm test
