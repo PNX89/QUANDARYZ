@@ -1,0 +1,20 @@
+A trader narrows the account filter from the whole book to one desk.
+The rows come from one endpoint and the exposure figure in the header from another.
+
+  guarded     1 distinct screen across 40 orderings
+
+  unguarded   4 distinct screens across 40 orderings
+
+  The guarded wiring applies the flag react.dev documents three times. It works.
+  Without it, which screen the trader gets is decided by the network.
+
+  One of them reads: 128 positions, 4.82m net
+  above 41 rows. Both figures were computed and sent by the server, so there is no
+  spinner, no error and nothing stale in the sense anybody checks for.
+  Reproduce it with: ("all") then ("desk") then ("desk") then ("all")...
+
+And a second property, on a screen that never tears at all:
+
+  the risk panel settles the same way every time, and renders "Within limits"
+  over a response about only the limits it asked about. No delivered value accounts
+  for that phrase. It was composed in the browser out of the absence of a breach.

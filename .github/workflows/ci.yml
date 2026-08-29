@@ -35,13 +35,17 @@ jobs:
           test "$(npm ls typescript --json | node -e 'const d=JSON.parse(require("fs").readFileSync(0));console.log(d.dependencies.typescript.version)')" = "6.0.3"
       - run: npm run typecheck
       - run: npm test
+      - name: run the demo exactly as the README tells a reader to
+        run: npm run demo
+      - name: capture what it printed
+        run: node scripts/capture-evidence.mjs
       - name: fail if any measured cardinality has changed
         run: |
           # The table is the exhibit, so a wiring whose count moves is a red build that names
           # which one moved rather than a number nobody was watching.
           git status --porcelain docs/evidence
-          git diff --exit-code -- docs/evidence
-          test -z "$(git status --porcelain docs/evidence)"
+          git diff --exit-code -- docs/evidence/wirings.json docs/evidence/demo.txt
+          test -z "$(git status --porcelain docs/evidence/wirings.json docs/evidence/demo.txt)"
 
   # The same counterexample, in a real browser. Its own job because it installs a browser, and
   # `npm test` must stay the command that installs none and reaches nothing outside npm.
