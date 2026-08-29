@@ -42,3 +42,22 @@ jobs:
           git status --porcelain docs/evidence
           git diff --exit-code -- docs/evidence
           test -z "$(git status --porcelain docs/evidence)"
+
+  # The same counterexample, in a real browser. Its own job because it installs a browser, and
+  # `npm test` must stay the command that installs none and reaches nothing outside npm.
+  #
+  # CHROMIUM ONLY, and the headless shell: 82 MB against the several hundred the default set
+  # pulls. One engine answers whether the result survives leaving the simulation; three would be
+  # answering a question about engine differences that nothing here investigates.
+  browser:
+    name: the counterexample, in real Chromium
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v5.0.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
