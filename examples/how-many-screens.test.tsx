@@ -8,6 +8,7 @@
  * same runner the tests use means what a reader sees is what CI runs.
  */
 import { render, screen } from '@testing-library/react'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { act } from 'react'
 import { it } from 'vitest'
 import fc from 'fast-check'
@@ -33,7 +34,19 @@ const CHECKS: readonly LimitCheck[] = [
   { limit: 'net', breached: false },
 ]
 
+/**
+ * THE DEMO WRITES ITS OWN TRANSCRIPT, and the first version did not.
+ *
+ * It printed to stdout and a capture script parsed the test runner's output back out again. That
+ * worked on a terminal and produced nothing on CI, because the reporter formats differently
+ * without a TTY: the capture step failed with "the demo printed almost nothing" on a demo that
+ * had run perfectly. Anything that parses another program's presentation layer is reading
+ * something nobody promised to keep stable.
+ */
+const lines: string[] = []
+
 function say(line = ''): void {
+  lines.push(line)
   // eslint-disable-next-line no-console
   console.log(line)
 }
@@ -97,4 +110,7 @@ it('how many screens', async () => {
   say('  over a response about only the limits it asked about. No delivered value accounts')
   say('  for that phrase. It was composed in the browser out of the absence of a breach.')
   view.unmount()
+
+  mkdirSync('docs/evidence', { recursive: true })
+  writeFileSync('docs/evidence/demo.txt', `${lines.join('\n').trim()}\n`)
 })
