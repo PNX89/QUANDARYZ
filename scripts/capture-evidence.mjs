@@ -11,27 +11,20 @@
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 
-const MARKER = /^stdout \| /
-
+/**
+ * THE DEMO WRITES ITS OWN TRANSCRIPT and this only runs it and reads the file back.
+ *
+ * The first version parsed the test runner's output to recover what the demo had printed. That
+ * worked on a terminal and produced nothing on CI, where the reporter formats differently
+ * without a TTY, so the capture failed on a demo that had run perfectly. Parsing another
+ * program's presentation layer is reading something nobody promised to keep stable.
+ */
 function demoOutput() {
-  const raw = execFileSync('npx', ['vitest', 'run', '--project', 'demo', '--reporter=verbose'], {
+  execFileSync('npx', ['vitest', 'run', '--project', 'demo'], {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   })
-  const lines = []
-  let inside = false
-  for (const line of raw.split('\n')) {
-    if (MARKER.test(line)) {
-      inside = true
-      continue
-    }
-    // The reporter's own summary starts once the test is ticked off.
-    if (/^\s*[\u2713\u00d7]/.test(line) || /^\s*Test Files/.test(line)) inside = false
-    if (inside) lines.push(line.replace(/\s+$/, ''))
-  }
-  // Collapse the blank runs the reporter's grouping leaves behind, so the transcript reads the
-  // way the demo would if it had a terminal to itself.
-  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim()
+  return readFileSync('docs/evidence/demo.txt', 'utf8').trim()
 }
 
 function testTotal() {
@@ -52,7 +45,6 @@ if (output.length < 200) {
 }
 
 mkdirSync('docs/evidence', { recursive: true })
-writeFileSync('docs/evidence/demo.txt', `${output}\n`)
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'))
 const tags = execFileSync('git', ['tag', '--sort=-v:refname'], { encoding: 'utf8' })
