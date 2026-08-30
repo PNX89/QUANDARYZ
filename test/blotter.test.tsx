@@ -68,12 +68,17 @@ describe('the blotter under out-of-order delivery', () => {
       seed: 1,
     })
     // RUNS AND ORDERINGS ARE DIFFERENT NUMBERS, and this assertion used to conflate them. The
-    // property ran 40 times and reached 6 distinct delivery orders, because fast-check draws an
-    // ordering per run and may draw the same one twice. Asserting the runs keeps the old
-    // guarantee that the search really happened; asserting the orderings records what was
-    // actually explored, which is the honest figure and is smaller.
+    // property runs 40 times and reaches 17 of this subject's 24 delivery orders, because
+    // fast-check draws an ordering per run and may draw the same one twice. Asserting the runs
+    // keeps the old guarantee that the search really happened; asserting the orderings records
+    // what was actually explored, which is the honest figure and is smaller.
+    //
+    // IT READ 6 UNTIL AN ORDERING WAS NAMED BY IDENTITY RATHER THAN BY ARGUMENT. A scheduled
+    // function reports as its argument list, so the two endpoints asked about the same account
+    // were one name and 24 orders were counted as 6. That was not a small honest number, it was
+    // a large one seen through a collapse, and the recipe printed beside it named two screens.
     expect(found.runs).toBe(40)
-    expect(found.orderings).toBe(6)
+    expect(found.orderings).toBe(17)
     expect(found.screens.size).toBe(1)
   })
 

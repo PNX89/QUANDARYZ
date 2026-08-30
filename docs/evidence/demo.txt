@@ -1,8 +1,8 @@
 A trader narrows the account filter from the whole book to one desk.
 The rows come from one endpoint and the exposure figure in the header from another.
 
-  guarded     1 distinct screen across 6 distinct orderings in 40 runs
-  unguarded   4 distinct screens across 6 distinct orderings in 40 runs
+  guarded     1 distinct screen across 17 distinct orderings in 40 runs
+  unguarded   4 distinct screens across 17 distinct orderings in 40 runs
 
   The guarded wiring applies the flag react.dev documents three times. It works.
   Without it, which screen the trader gets is decided by the network.
@@ -10,7 +10,7 @@ The rows come from one endpoint and the exposure figure in the header from anoth
   One of them reads: 128 positions, 4.82m net
   above 41 rows. Both figures were computed and sent by the server, so there is no
   spinner, no error and nothing stale in the sense anybody checks for.
-  Reproduce it with: ("all") then ("desk") then ("desk") then ("all")...
+  Reproduce it with: 1:("all") then 4:("desk") then 3:("desk") then 2:("all")...
 
 And a second property, on a screen that never tears at all:
 

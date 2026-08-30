@@ -67,11 +67,19 @@ describe('the fill feed', () => {
 
     expect(seen).toContain('Working')
     expect(seen).toContain('Cancelled')
-    // The venue said the request succeeded and affected nothing. It did not say either word,
-    // and the order they refer to had already filled 100.
-    expect(ANSWER.ok).toBe(true)
-    expect(ANSWER.affected).toBe(0)
-    expect(FILLS[0]!.filled).toBe(100)
+
+    // THE ORACLE CHECKED AGAINST THE BODIES DIRECTLY, because the two lines above are the
+    // oracle reporting on itself. Three assertions stood here instead, `expect(ANSWER.ok)
+    // .toBe(true)` and two like it over constants declared at the top of this same file: they
+    // compared fixtures with themselves and a comment above them made them read as a finding
+    // about the subject. What is actually claimed is that the venue never said either word, and
+    // that is a statement about what it sent.
+    const bodies = JSON.stringify([FILLS, ANSWER])
+    for (const word of seen) {
+      expect(bodies, `the oracle called ${word} unaccounted for and it is in a body`).not.toContain(
+        word,
+      )
+    }
   })
 
   it('accounts for the numbers, so the failure is about the word', async () => {

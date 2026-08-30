@@ -17,6 +17,7 @@ import fc from 'fast-check'
 
 import type { Exposure, Position, Transport } from '../src/blotter'
 import { Wired, freshClient, type WiringName } from '../src/wirings'
+import { exhibit, type Measured, type Observation } from './exhibit'
 import { digest, fingerprint } from '../src/screen'
 import { explore } from '../src/explore'
 
@@ -55,7 +56,14 @@ function scheduled(scheduler: fc.Scheduler): Transport {
  */
 const FULLY_SCHEDULED: ReadonlySet<WiringName> = new Set(['effect-guarded', 'effect-unguarded'])
 
-async function cardinality(wiring: WiringName, runs = 40): Promise<number> {
+// THE SEARCH, NAMED ONCE, because the exhibit has to be able to state what it was. These three
+// used to appear twice: here as arguments, and again as literals in the object written to
+// docs/evidence/wirings.json, where nothing tied the two together.
+const RUNS = 40
+const SEED = 7
+const REPEATS = 3
+
+async function cardinality(wiring: WiringName, runs = RUNS): Promise<Observation> {
   const found = await explore(async (scheduler) => {
     const transport = scheduled(scheduler)
     const client = freshClient()
@@ -70,8 +78,10 @@ async function cardinality(wiring: WiringName, runs = 40): Promise<number> {
     view.unmount()
     client.clear()
     return shot
-  }, { runs, seed: 7 })
-  return found.screens.size
+  }, { runs, seed: SEED })
+  // THE RUN COUNT COMES BACK WITH THE RESULT rather than being read off the call beside it, so
+  // the exhibit can record the search that happened. `explore` counts the runs it performed.
+  return { screens: found.screens.size, runs: found.runs }
 }
 
 describe('the wiring matrix', () => {
@@ -85,45 +95,23 @@ describe('the wiring matrix', () => {
     // REPEATED, because a count that moves between runs is not a count. Each wiring is
     // explored three times and the range is recorded, so a wiring the harness does not fully
     // control reports what it actually did rather than whichever number was seen first.
-    const table: Record<string, { min: number; max: number; fullyScheduled: boolean }> = {}
+    const table: Record<string, Measured> = {}
     for (const wiring of wirings) {
-      const seen = [await cardinality(wiring), await cardinality(wiring), await cardinality(wiring)]
-      table[wiring] = {
-        min: Math.min(...seen),
-        max: Math.max(...seen),
-        fullyScheduled: FULLY_SCHEDULED.has(wiring),
-      }
-      // eslint-disable-next-line no-console
-      console.log(`${wiring}: observed ${seen.join(', ')}`)
+      const observations: Observation[] = []
+      for (let repeat = 0; repeat < REPEATS; repeat += 1) observations.push(await cardinality(wiring))
+      table[wiring] = { observations, fullyScheduled: FULLY_SCHEDULED.has(wiring) }
+      console.log(`${wiring}: observed ${observations.map((seen) => seen.screens).join(', ')}`)
     }
 
     // WRITTEN OUT, because the table IS the exhibit. CI diffs this file, so a wiring whose
     // cardinality moves is a red build that names which one moved rather than a number nobody
     // was watching.
     mkdirSync('docs/evidence', { recursive: true })
-    // ONLY THE REPRODUCIBLE HALF IS COMMITTED. The wirings this harness fully controls have a
-    // stable count and it is recorded; the ones it does not are recorded as a lower bound with
-    // the reason, because pinning a number that moves is how an evidence file becomes noise.
-    const committed = Object.fromEntries(
-      Object.entries(table).map(([wiring, seen]) => [
-        wiring,
-        seen.fullyScheduled
-          ? { cardinality: seen.min, fullyScheduled: true }
-          : {
-              // NO NUMBER AT ALL, and that is the honest record. Three repeats on one machine
-              // returned different counts, so any figure committed here would fail a diff on
-              // the next run and the file would be deleted within a fortnight. What is true and
-              // stable is that this harness does not enumerate these orderings.
-              fullyScheduled: false,
-              reason:
-                'this library schedules work the explorer does not control, so the count is a ' +
-                'lower bound that moves between runs and is not committed',
-            },
-      ]),
-    )
+    // ONLY THE REPRODUCIBLE HALF IS COMMITTED, and the header is derived from the observations
+    // rather than typed beside them: see the comment in test/exhibit.ts for what that cost.
     writeFileSync(
       'docs/evidence/wirings.json',
-      `${JSON.stringify({ runs: 40, seed: 7, repeats: 3, wirings: committed }, null, 2)}\n`,
+      `${JSON.stringify(exhibit(table, SEED), null, 2)}\n`,
     )
 
     expect(Object.keys(table)).toHaveLength(4)
@@ -131,14 +119,158 @@ describe('the wiring matrix', () => {
     // would be incomplete for a wiring the harness claims to see all of, which is a defect in
     // the instrument rather than a property of the subject.
     for (const [wiring, seen] of Object.entries(table)) {
+      const counts = seen.observations.map((observation) => observation.screens)
       if (seen.fullyScheduled) {
-        expect(seen.min, `${wiring} returned different counts across repeats`).toBe(seen.max)
+        expect(Math.min(...counts), `${wiring} returned different counts across repeats`).toBe(
+          Math.max(...counts),
+        )
       }
     }
     // THE SHAPE, NOT THE RANKING. At least one wiring returns 1, so the instrument is shown
     // capable of finding nothing, and at least one returns more, so the subject is shown capable
     // of tearing. Without both, the table would be unfalsifiable.
-    expect(Object.values(table).some((seen) => seen.max === 1)).toBe(true)
-    expect(Object.values(table).some((seen) => seen.min > 1)).toBe(true)
+    const counts = Object.values(table).map((seen) => seen.observations.map((one) => one.screens))
+    expect(counts.some((seen) => Math.max(...seen) === 1)).toBe(true)
+    expect(counts.some((seen) => Math.min(...seen) > 1)).toBe(true)
   }, 60_000)
+})
+
+describe('the committed exhibit', () => {
+  it('states the search the measurement actually ran', () => {
+    // THE DEFECT THIS PINS. `runs`, `seed` and `repeats` were written as literals beside the
+    // measurement rather than taken from it. Cutting the real run count from forty to twelve
+    // left docs/evidence/wirings.json byte-identical, and a `git diff --exit-code` on that file
+    // is the only thing in CI watching what was measured.
+    const built = exhibit(
+      {
+        'effect-guarded': {
+          observations: [
+            { screens: 1, runs: 12 },
+            { screens: 1, runs: 12 },
+          ],
+          fullyScheduled: true,
+        },
+        'query-default': {
+          observations: [
+            { screens: 3, runs: 12 },
+            { screens: 2, runs: 12 },
+          ],
+          fullyScheduled: false,
+        },
+      },
+      9,
+    )
+    expect(built.runs).toBe(12)
+    expect(built.repeats).toBe(2)
+    expect(built.seed).toBe(9)
+    expect(built.wirings['effect-guarded']).toEqual({ cardinality: 1, fullyScheduled: true })
+    // A wiring the harness does not fully control carries no number at all, only the reason.
+    expect(built.wirings['query-default']).not.toHaveProperty('cardinality')
+    expect(built.wirings['query-default']?.reason).toContain('not committed')
+  })
+
+  it('refuses to head an exhibit with a number only half the run used', () => {
+    expect(() =>
+      exhibit(
+        {
+          'effect-guarded': {
+            observations: [
+              { screens: 1, runs: 40 },
+              { screens: 1, runs: 12 },
+            ],
+            fullyScheduled: true,
+          },
+        },
+        SEED,
+      ),
+    ).toThrow(/disagree about runs/)
+  })
+})
+
+/**
+ * A transport whose promises are released by hand, so a screen can be read while a request is
+ * still in flight.
+ *
+ * The scheduler answers how many screens exist across every ordering. These two tests ask the
+ * narrower question the wiring table's last two rows depend on: that those rows were produced by
+ * TanStack Query at all, and that the two configurations differ. Nothing asked either before, so
+ * both rows survived being rewired to plain effects with every gate green.
+ */
+function heldOpen(): { transport: Transport; deliver: () => Promise<void> } {
+  const held: (() => void)[] = []
+  return {
+    transport: {
+      positions: (account) =>
+        new Promise((resolve) => held.push(() => resolve(account === 'all' ? WHOLE_BOOK : ONE_DESK))),
+      exposure: (account) => new Promise((resolve) => held.push(() => resolve(EXPOSURE[account]!))),
+    },
+    deliver: async () => {
+      for (const release of held.splice(0)) release()
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0))
+      })
+    },
+  }
+}
+
+/** What the blotter is showing, read through this repository's own unit of comparison. */
+function shown(): { heading: string; rows: number } {
+  const nodes = fingerprint(screen.getByRole('region', { name: 'Blotter' }))
+  const heading = nodes.find((node) => node.role === 'heading')
+  expect(heading, 'the blotter rendered no header at all').toBeDefined()
+  return { heading: heading?.value ?? '', rows: nodes.filter((node) => node.role === 'row').length }
+}
+
+describe('the two rows the wiring table publishes as TanStack Query', () => {
+  it('fetches through the query client it was handed', async () => {
+    for (const wiring of ['query-default', 'query-keep-previous'] as const) {
+      const { transport, deliver } = heldOpen()
+      const client = freshClient()
+      const view = render(<Wired wiring={wiring} transport={transport} account="all" client={client} />)
+      await deliver()
+
+      expect(shown(), `${wiring} did not render the delivered book`).toEqual({
+        heading: '128 positions, 4.82m net',
+        rows: 128,
+      })
+      // THE ROW HAS TO BE ABOUT THE LIBRARY IT NAMES. Rewiring `Wired` to return the effects
+      // component for all four names left the published table, the evidence file and every
+      // gate untouched, so these two rows were a measurement of the wiring beside them.
+      const keys = client
+        .getQueryCache()
+        .getAll()
+        .map((query) => JSON.stringify(query.queryKey))
+      expect(keys, `${wiring} never went through the query client`).toContain('["positions","all"]')
+      expect(keys).toContain('["exposure","all"]')
+      view.unmount()
+      client.clear()
+    }
+  })
+
+  it('keeps the previous screen only in the wiring that asked for it', async () => {
+    // The two rows are one option apart. Deleting `placeholderData: keepPreviousData` from both
+    // `useQuery` calls made them the same wiring published twice, and nothing noticed: the
+    // matrix commits no number for either, and the shape assertions above are satisfied by the
+    // two effect wirings on their own.
+    const held: Record<string, { heading: string; rows: number }> = {}
+    for (const wiring of ['query-default', 'query-keep-previous'] as const) {
+      const { transport, deliver } = heldOpen()
+      const client = freshClient()
+      const view = render(<Wired wiring={wiring} transport={transport} account="all" client={client} />)
+      await deliver()
+      // The filter narrows and neither request for the desk has come back yet.
+      view.rerender(<Wired wiring={wiring} transport={transport} account="desk" client={client} />)
+      await act(async () => {
+        await Promise.resolve()
+      })
+      held[wiring] = shown()
+      view.unmount()
+      client.clear()
+    }
+
+    // Keeping the previous screen is what the option is for, and it is also the reason the
+    // wiring can settle on a header from one account above rows from another.
+    expect(held['query-keep-previous']).toEqual({ heading: '128 positions, 4.82m net', rows: 128 })
+    expect(held['query-default']).toEqual({ heading: 'Loading exposure', rows: 0 })
+  })
 })

@@ -88,7 +88,7 @@
   <p class="claim">A blotter whose rows and whose header exposure figure come from two endpoints settles into four different screens depending only on which response lands first, and every figure on every one of them was computed and sent by the server. One of them shows 41 position rows under a header reading 128 positions, with no spinner, no error and nothing stale in the sense anybody checks for. fast-check already explores the orderings; what this adds is the count, because knowing that an ordering exists which breaks a predicate is a different thing from knowing how many screens a user can be shown.</p>
 
   <dl class="facts">
-    <div><dt>Tests</dt><dd>32</dd></div>
+    <div><dt>Tests</dt><dd>49</dd></div>
     <div><dt>Node</dt><dd>24</dd></div>
     <div><dt>Release</dt><dd>v0.1.0</dd></div>
   </dl>
@@ -102,8 +102,8 @@
   <pre tabindex="0" role="region" aria-label="Captured output of npm run demo">A trader narrows the account filter from the whole book to one desk.
 The rows come from one endpoint and the exposure figure in the header from another.
 
-  guarded     1 distinct screen across 6 distinct orderings in 40 runs
-  unguarded   4 distinct screens across 6 distinct orderings in 40 runs
+  guarded     1 distinct screen across 17 distinct orderings in 40 runs
+  unguarded   4 distinct screens across 17 distinct orderings in 40 runs
 
   The guarded wiring applies the flag react.dev documents three times. It works.
   Without it, which screen the trader gets is decided by the network.
@@ -111,7 +111,7 @@ The rows come from one endpoint and the exposure figure in the header from anoth
   One of them reads: 128 positions, 4.82m net
   above 41 rows. Both figures were computed and sent by the server, so there is no
   spinner, no error and nothing stale in the sense anybody checks for.
-  Reproduce it with: (&quot;all&quot;) then (&quot;desk&quot;) then (&quot;desk&quot;) then (&quot;all&quot;)...
+  Reproduce it with: 1:(&quot;all&quot;) then 4:(&quot;desk&quot;) then 3:(&quot;desk&quot;) then 2:(&quot;all&quot;)...
 
 And a second property, on a screen that never tears at all:
 

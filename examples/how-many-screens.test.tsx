@@ -47,7 +47,6 @@ const lines: string[] = []
 
 function say(line = ''): void {
   lines.push(line)
-  // eslint-disable-next-line no-console
   console.log(line)
 }
 
