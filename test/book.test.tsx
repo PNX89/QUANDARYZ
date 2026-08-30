@@ -45,7 +45,9 @@ async function settleAfterSwitch(scheduler: fc.Scheduler): Promise<string> {
 describe('the order book, which is the control', () => {
   it('settles into exactly one screen however the responses are ordered', async () => {
     const found = await explore(settleAfterSwitch, { runs: 40, seed: 3 })
-    expect(found.orderings).toBe(40)
+    expect(found.runs).toBe(40)
+    // Two tasks, so there are only two orders to reach, and forty runs reach both.
+    expect(found.orderings).toBe(2)
     expect(found.screens.size).toBe(1)
   })
 

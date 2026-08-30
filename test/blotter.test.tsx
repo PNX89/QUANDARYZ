@@ -67,7 +67,13 @@ describe('the blotter under out-of-order delivery', () => {
       runs: 40,
       seed: 1,
     })
-    expect(found.orderings).toBe(40)
+    // RUNS AND ORDERINGS ARE DIFFERENT NUMBERS, and this assertion used to conflate them. The
+    // property ran 40 times and reached 6 distinct delivery orders, because fast-check draws an
+    // ordering per run and may draw the same one twice. Asserting the runs keeps the old
+    // guarantee that the search really happened; asserting the orderings records what was
+    // actually explored, which is the honest figure and is smaller.
+    expect(found.runs).toBe(40)
+    expect(found.orderings).toBe(6)
     expect(found.screens.size).toBe(1)
   })
 
