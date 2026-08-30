@@ -23,11 +23,13 @@ here is one CI does not run:
 npm ci
 npm run typecheck
 npm test
+npm run demo
+npx playwright install --with-deps chromium
+npm run test:browser
 ```
 
 Run every one of them. Running only the test suite is the most common way to be surprised by a
-red badge: the type checker is a gate here, not a suggestion. There is no formatter and no
-linter in this repository, so nothing in that list will reformat your diff or argue with it.
+red badge: typing is a gate here, not suggestions.
 
 ## And the jobs that gate the pull request
 
@@ -38,7 +40,7 @@ The list above is longer than the commands above it, and that is the point of na
 pull request is green when every one of those jobs is, and some of them need something this
 clone does not give you. Passing everything in the previous section is necessary and it is not
 sufficient, which is a sentence this file used to get wrong: it called the command list "the
-checks that gate every push" and left out the job that runs in a real browser.
+checks that gate every push" and left out every job that runs anything other than uv.
 
 ## Everything merges through a pull request
 
