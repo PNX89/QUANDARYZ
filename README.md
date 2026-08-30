@@ -13,9 +13,9 @@ never tears while rendering a verdict no response body contains.](docs/demo.svg)
 
 <!-- quoted from docs/evidence/demo.txt -->
 ```text
-  guarded     1 distinct screen across 40 orderings
+  guarded     1 distinct screen across 6 distinct orderings in 40 runs
 
-  unguarded   4 distinct screens across 40 orderings
+  unguarded   4 distinct screens across 6 distinct orderings in 40 runs
 ```
 
 **fast-check** does the exploring. Its `fc.scheduler` already permutes delivery orders and

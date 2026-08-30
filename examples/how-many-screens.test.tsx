@@ -77,7 +77,14 @@ it('how many screens', async () => {
 
   for (const wiring of ['guarded', 'unguarded'] as const) {
     const found = await explore(settle(wiring), { runs: 40, seed: 1 })
-    say(`  ${wiring.padEnd(11)} ${found.screens.size} distinct screen${found.screens.size === 1 ? '' : 's'} across ${found.orderings} orderings`)
+    // BOTH NUMBERS, because they are different and the line used to print one while naming the
+    // other. `orderings` is how many distinct delivery orders were actually reached; `runs` is
+    // how many times the property drew one. fast-check may draw the same order twice, so the
+    // first is the honest measure of the search and the second is the effort spent on it.
+    say(
+      `  ${wiring.padEnd(11)} ${found.screens.size} distinct screen${found.screens.size === 1 ? '' : 's'} ` +
+        `across ${found.orderings} distinct ordering${found.orderings === 1 ? '' : 's'} in ${found.runs} runs`,
+    )
   }
   say()
   say('  The guarded wiring applies the flag react.dev documents three times. It works.')
