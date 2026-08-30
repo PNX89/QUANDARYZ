@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest'
 import fc from 'fast-check'
 
 import type { Exposure, Position, Transport } from '../src/blotter'
-import { Wired, freshClient, type WiringName } from '../src/wirings'
+import { Wired, freshClient, WIRING_NAMES, type WiringName } from '../src/wirings'
 import { exhibit, type Measured, type Observation } from './exhibit'
 import { digest, fingerprint } from '../src/screen'
 import { explore } from '../src/explore'
@@ -86,12 +86,12 @@ async function cardinality(wiring: WiringName, runs = RUNS): Promise<Observation
 
 describe('the wiring matrix', () => {
   it('publishes a cardinality for every wiring, including the ones that return one', async () => {
-    const wirings: readonly WiringName[] = [
-      'effect-guarded',
-      'effect-unguarded',
-      'query-default',
-      'query-keep-previous',
-    ]
+    // TAKEN FROM src/wirings.tsx RATHER THAN RETYPED HERE. This list used to be its own four
+    // literals, so a fifth name added to `WiringName` compiled clean, rendered as TanStack Query
+    // and appeared in this loop, this table and docs/evidence/wirings.json exactly zero times.
+    // Reading the same array `Wired` derives its union from means "every wiring" cannot mean
+    // "every wiring somebody remembered to type twice".
+    const wirings: readonly WiringName[] = WIRING_NAMES
     // REPEATED, because a count that moves between runs is not a count. Each wiring is
     // explored three times and the range is recorded, so a wiring the harness does not fully
     // control reports what it actually did rather than whichever number was seen first.
@@ -114,7 +114,7 @@ describe('the wiring matrix', () => {
       `${JSON.stringify(exhibit(table, SEED), null, 2)}\n`,
     )
 
-    expect(Object.keys(table)).toHaveLength(4)
+    expect(Object.keys(table)).toHaveLength(WIRING_NAMES.length)
     // A COUNT THIS HARNESS CONTROLS MUST NOT MOVE between repeats. If one did, the enumeration
     // would be incomplete for a wiring the harness claims to see all of, which is a defect in
     // the instrument rather than a property of the subject.

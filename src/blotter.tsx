@@ -1,11 +1,11 @@
 /**
- * A position blotter, wired the way a real one is: three independently guarded requests.
+ * A position blotter, wired the way a real one is: two independently guarded requests.
  *
- * THE SUBJECT, AND IT IS DELIBERATELY ORDINARY. Rows come from one endpoint, the mark column
- * from a second, and the net exposure in the header from a third, because a blotter takes its
- * exposure from the risk service rather than multiplying in the browser. Each request guards
- * itself against its own predecessor with the flag react.dev documents, which is correct and is
- * not enough: nothing guards the three against EACH OTHER.
+ * THE SUBJECT, AND IT IS DELIBERATELY ORDINARY. Rows come from one endpoint and the net
+ * exposure in the header from a second, because a blotter takes its exposure from the risk
+ * service rather than multiplying in the browser. Each request guards itself against its own
+ * predecessor with the flag react.dev documents, which is correct and is not enough: nothing
+ * guards the two against EACH OTHER.
  *
  * Narrow the account filter and the screen can settle with the new rows under the old header.
  * Both numbers were computed and sent by the server, so nothing is stale in the sense anybody

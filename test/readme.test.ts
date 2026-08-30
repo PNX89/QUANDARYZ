@@ -143,17 +143,33 @@ describe('the front page', () => {
   })
 
   it('quotes only lines the demo actually printed', () => {
+    // ORDERED AND CONTIGUOUS, NOT MERELY PRESENT. This used to check set membership over
+    // trimmed lines, so a block built from lines scattered anywhere in the source, in any
+    // order, satisfied it as long as each line existed somewhere in the file. What a "quoted
+    // from" comment promises is a contiguous extract, so the body's non-blank lines must appear
+    // as an unbroken, ordered run inside the source's non-blank lines, not merely as a bag each
+    // of which the source happens to contain.
     const blocks = [...README.matchAll(/<!-- quoted from (\S+) -->\n```text\n([\s\S]*?)```/g)]
     expect(blocks.length, 'no block on the page declares where it was quoted from').toBeGreaterThan(0)
     for (const [, path, body] of blocks) {
       expect(existsSync(path!), `the page quotes ${path}, which does not exist`).toBe(true)
-      const source = new Set(readFileSync(path!, 'utf8').split('\n').map((line) => line.trim()))
-      for (const line of body!.split('\n')) {
-        if (line.trim() === '') continue
-        expect(source, `the page quotes ${JSON.stringify(line.trim())} as from ${path}`).toContain(
-          line.trim(),
-        )
+      const sourceLines = readFileSync(path!, 'utf8')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line !== '')
+      const bodyLines = body!
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line !== '')
+      expect(bodyLines.length, `the page quotes an empty block from ${path}`).toBeGreaterThan(0)
+      let isContiguousSlice = false
+      for (let start = 0; start + bodyLines.length <= sourceLines.length && !isContiguousSlice; start++) {
+        isContiguousSlice = bodyLines.every((line, offset) => sourceLines[start + offset] === line)
       }
+      expect(
+        isContiguousSlice,
+        `the page quotes ${path} as a block whose lines are not a contiguous, ordered extract of it`,
+      ).toBe(true)
     }
   })
 
