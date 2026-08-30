@@ -7,7 +7,7 @@ be useful is usually to disagree with something it claims.
 
 ```bash
 git clone https://github.com/PNX89/QUANDARYZ.git && cd QUANDARYZ
-uv sync --all-extras --dev
+npm ci
 npm run demo
 ```
 
@@ -21,11 +21,13 @@ here is one CI does not run:
 
 ```bash
 npm ci
+npm run typecheck
 npm test
 ```
 
 Run every one of them. Running only the test suite is the most common way to be surprised by a
-red badge: formatting and typing are gates here, not suggestions.
+red badge: the type checker is a gate here, not a suggestion. There is no formatter and no
+linter in this repository, so nothing in that list will reformat your diff or argue with it.
 
 ## And the jobs that gate the pull request
 
@@ -36,7 +38,7 @@ The list above is longer than the commands above it, and that is the point of na
 pull request is green when every one of those jobs is, and some of them need something this
 clone does not give you. Passing everything in the previous section is necessary and it is not
 sufficient, which is a sentence this file used to get wrong: it called the command list "the
-checks that gate every push" and left out every job that runs anything other than uv.
+checks that gate every push" and left out the job that runs in a real browser.
 
 ## Everything merges through a pull request
 
@@ -62,7 +64,7 @@ https://pnx89.github.io/QUANDARYZ, come from a real run whose output is committe
 `docs/evidence/`. If you change behaviour, regenerate rather than editing either by hand:
 
 ```bash
-uv run python scripts/capture_evidence.py
+node scripts/capture-evidence.mjs
 ```
 
 The output is committed on purpose. Actions logs are kept for 90 days and then the run and

@@ -17,7 +17,7 @@ export interface Node {
   readonly value: string
 }
 
-/** Every element that carries a role, in document order, as role, name and value. */
+/** Every element carrying a role or declaring itself consequential, in document order. */
 export function fingerprint(root: HTMLElement): readonly Node[] {
   const nodes: Node[] = []
   // `[data-consequential]` IS IN THIS LIST BECAUSE OF WHAT WAS MISSING WITHOUT IT. The selector

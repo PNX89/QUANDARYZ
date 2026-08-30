@@ -20,6 +20,24 @@ export interface Unnamed {
 }
 
 /**
+ * THE RULES THAT DECIDE WHETHER A TREE CAN BE COMPARED, and no others. Running the whole suite
+ * would fail subjects for contrast or landmarks, which are real accessibility findings and have
+ * nothing to do with whether two screens can be distinguished. Mixing them would make this a
+ * compliance gate wearing a measurement's clothes.
+ *
+ * EXPORTED SO THE LIST CAN BE HELD BY ITS VALUE. The test that guarded it read this file as
+ * text and asserted the names appeared somewhere in it, and a comment satisfies that: the whole
+ * option was replaced with a broad tag sweep, the four names were written in a comment above it,
+ * and the suite stayed green. A list is pinned by name and by length or it is not pinned.
+ */
+export const NAME_RULES = [
+  'button-name',
+  'link-name',
+  'input-button-name',
+  'aria-command-name',
+] as const
+
+/**
  * Every interactive or labelled element on this screen that carries no accessible name.
  *
  * An empty result is the precondition holding. A non-empty one names the elements, because
@@ -27,14 +45,7 @@ export interface Unnamed {
  */
 export async function unnamed(root: HTMLElement): Promise<readonly Unnamed[]> {
   const results = await axe.run(root, {
-    // THE RULES THAT DECIDE WHETHER A TREE CAN BE COMPARED, and no others. Running the whole
-    // suite would fail subjects for contrast or landmarks, which are real accessibility
-    // findings and have nothing to do with whether two screens can be distinguished. Mixing
-    // them would make this a compliance gate wearing a measurement's clothes.
-    runOnly: {
-      type: 'rule',
-      values: ['button-name', 'link-name', 'input-button-name', 'aria-command-name'],
-    },
+    runOnly: { type: 'rule', values: [...NAME_RULES] },
   })
   return results.violations.flatMap((violation) =>
     violation.nodes.map((node) => ({

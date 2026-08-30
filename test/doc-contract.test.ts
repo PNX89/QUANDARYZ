@@ -42,13 +42,32 @@ type Contract = {
   fileExceptions: string[]
 }
 
+const KINDS = ['number', 'command', 'output', 'reference'] as const
+
+/**
+ * THE DECLARATION, HELD INSIDE THE REPOSITORY THAT MAKES IT.
+ *
+ * It used to live only in `../toolset.json`, and `manifest()` returns null when that file is not
+ * beside this checkout: both contract tests then returned early and reported a pass. That is the
+ * layout of a plain `git clone`, and it is the layout of actions/checkout in ci.yml, which takes
+ * this repository alone into a directory whose parent holds nothing else. So the contract was
+ * enforced on one laptop and nowhere else, in the file whose own docstring says it exists
+ * because a generated Python version "would have been generated, committed, and silently
+ * unenforced". Renaming all four claim tests in a clone with no sibling manifest gave three
+ * passing tests.
+ *
+ * The manifest is still read, and it is now checked AGAINST this copy rather than instead of it.
+ */
+const DECLARED: Record<(typeof KINDS)[number], string> = JSON.parse(
+  readFileSync('docs/contract.json', 'utf8'),
+)
+
 /**
  * The manifest, if this is a checkout that has it beside us.
  *
- * A clone of this repository ALONE is a legitimate way to have it, and the contract lives one
- * directory up in the toolset. So the manifest is optional and its absence skips the second
- * test rather than failing it, which is the difference between a check and a trap for anybody
- * who clones a single repository to read it.
+ * A clone of this repository ALONE is a legitimate way to have it, and the toolset's copy of the
+ * contract lives one directory up. So the manifest stays optional: what its absence may skip is
+ * the comparison BETWEEN the two declarations, never the enforcement of the one held here.
  */
 function manifest(): Contract | null {
   const path = join('..', 'toolset.json')
@@ -91,13 +110,11 @@ describe('the documentation contract', () => {
   })
 
   it('still implements every claim kind the manifest declares for it', () => {
-    const contract = manifest()
-    if (contract === null) return
-
+    // NO EARLY RETURN. This runs in a lone clone and in CI, which is where it never ran before.
     const body = suite()
     const missing: Record<string, string> = {}
-    for (const kind of ['number', 'command', 'output', 'reference'] as const) {
-      const name = contract[kind]
+    for (const kind of KINDS) {
+      const name = DECLARED[kind]
       // Matched as `it('<name>'` against a comment-stripped suite. Both halves are needed and
       // this was proved by trying it: matching the call form alone still passed when the test
       // was commented out, which is the same false pass this toolset shipped once before in a
@@ -109,10 +126,31 @@ describe('the documentation contract', () => {
     expect(missing).toEqual({})
   })
 
-  it('declares no file exception it no longer needs', () => {
+  it('holds a declaration that came with the clone', () => {
+    // The point of the file above: something local to hold the contract to, so that the check
+    // is real in every checkout rather than in the one that happens to sit beside the toolset.
+    expect(existsSync('docs/contract.json'), 'the contract has nothing local to hold').toBe(true)
+    expect(Object.keys(DECLARED).sort()).toEqual([...KINDS].sort())
+  })
+
+  it('gives every test its own name, so a claim kind cannot be held by the wrong test', () => {
+    // The kinds above are matched by name against the whole suite. Two tests sharing a name
+    // means deleting the one that implements the claim leaves the other one answering for it,
+    // which is the failure this file is about wearing different clothes.
+    const names = [...suite().matchAll(/\bit\('([^']+)'/g)].map((match) => match[1]!)
+    const twice = [...new Set(names.filter((name, index) => names.indexOf(name) !== index))]
+    expect(twice, `these test names appear more than once: ${twice.join(', ')}`).toEqual([])
+  })
+
+  it('declares the same contract as the manifest, where the manifest is beside it', () => {
     const contract = manifest()
     if (contract === null) return
+    for (const kind of KINDS) {
+      expect(contract[kind], `the manifest and docs/contract.json disagree about ${kind}`).toBe(
+        DECLARED[kind],
+      )
+    }
     const stale = (contract.fileExceptions ?? []).filter((path) => existsSync(path))
-    expect(stale).toEqual([])
+    expect(stale, 'the manifest declares a file exception it no longer needs').toEqual([])
   })
 })

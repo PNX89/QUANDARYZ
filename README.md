@@ -13,9 +13,9 @@ never tears while rendering a verdict no response body contains.](docs/demo.svg)
 
 <!-- quoted from docs/evidence/demo.txt -->
 ```text
-  guarded     1 distinct screen across 6 distinct orderings in 40 runs
+  guarded     1 distinct screen across 17 distinct orderings in 40 runs
 
-  unguarded   4 distinct screens across 6 distinct orderings in 40 runs
+  unguarded   4 distinct screens across 17 distinct orderings in 40 runs
 ```
 
 **fast-check** does the exploring. Its `fc.scheduler` already permutes delivery orders and
@@ -49,7 +49,7 @@ watched refusing a subject written to fail it.
 | subject | determinacy | attribution |
 |---|---|---|
 | order book | passes | passes |
-| position blotter | **fires** | passes |
+| position blotter | **fires** | not measured |
 | risk panel | passes | **fires** |
 | fill feed | **fires** | **fires** |
 
@@ -71,9 +71,14 @@ about their risk; it is a statement about a query.
 invisible to it. Inferring which nodes matter by matching text against response bodies finds
 coincidences, and a number that happens to appear in a payload is not one that came from it.
 
+That is why the blotter's attribution cell reads *not measured* rather than *passes*. The blotter
+declares no consequential nodes, so the oracle returns the empty list for it whatever the
+responses were, and a green cell would have been reporting the empty set holding. It said
+*passes* here until the annotations were counted.
+
 ## Four idiomatic wirings, and the two this harness cannot fully see
 
-The same subject, fetched four ways:
+The same subject, fetched four ways, each explored over 40 runs and repeated 3 times:
 
 | wiring | distinct settled screens |
 |---|---|
