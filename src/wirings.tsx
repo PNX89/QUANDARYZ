@@ -17,7 +17,20 @@ import { useEffect, useState } from 'react'
 
 import type { Exposure, Position, Transport } from './blotter'
 
-export type WiringName = 'effect-guarded' | 'effect-unguarded' | 'query-keep-previous' | 'query-default'
+/**
+ * The four names, and the union is derived from this array rather than typed beside it.
+ *
+ * `WiringName` used to be its own literal union, and `Wired` dispatched on it with an if that
+ * fell through to the query branch for anything not an effects wiring. Adding a fifth name to
+ * the union then compiled clean and rendered as TanStack Query, measured by nothing: the test
+ * that publishes "every wiring" iterated this same list of four written out a second time by
+ * hand, so the new name appeared in no test and no evidence file. Deriving the union from the
+ * array, and the test's list from the same array, leaves one place to add a wiring rather than
+ * three that can drift apart.
+ */
+export const WIRING_NAMES = ['effect-guarded', 'effect-unguarded', 'query-keep-previous', 'query-default'] as const
+
+export type WiringName = (typeof WIRING_NAMES)[number]
 
 /** The rendered surface, identical in every wiring, so only the fetching differs. */
 function Surface({
@@ -119,20 +132,31 @@ export function Wired({
   account: string
   client: QueryClient
 }) {
-  if (wiring === 'effect-guarded' || wiring === 'effect-unguarded') {
-    return (
-      <WithEffects transport={transport} account={account} guarded={wiring === 'effect-guarded'} />
-    )
+  switch (wiring) {
+    case 'effect-guarded':
+    case 'effect-unguarded':
+      return (
+        <WithEffects transport={transport} account={account} guarded={wiring === 'effect-guarded'} />
+      )
+    case 'query-default':
+    case 'query-keep-previous':
+      return (
+        <QueryClientProvider client={client}>
+          <WithQuery
+            transport={transport}
+            account={account}
+            keepPrevious={wiring === 'query-keep-previous'}
+          />
+        </QueryClientProvider>
+      )
+    default: {
+      // A FIFTH NAME FAILS HERE, AT THE TYPE CHECKER, RATHER THAN RENDERING SILENTLY AS
+      // TANSTACK QUERY. If `wiring` is not one of the four cases above, it is not `never`, and
+      // the assignment below does not compile.
+      const unreachable: never = wiring
+      throw new Error(`unhandled wiring: ${String(unreachable)}`)
+    }
   }
-  return (
-    <QueryClientProvider client={client}>
-      <WithQuery
-        transport={transport}
-        account={account}
-        keepPrevious={wiring === 'query-keep-previous'}
-      />
-    </QueryClientProvider>
-  )
 }
 
 /** A client with retries off, because a retry is a second delivery and this varies deliveries. */

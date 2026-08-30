@@ -38,6 +38,28 @@ function testTotal() {
   return report.numTotalTests
 }
 
+/**
+ * The Node version, read from the workflow rather than typed here a second time.
+ *
+ * `node: '24'` used to be a literal beside fields that are all measured, so it read as captured
+ * when it was not: nothing tied it to what CI actually runs, and bumping ci.yml's node-version
+ * would leave this file, and the card built from it, still saying the old one. Both jobs in
+ * ci.yml pin a version, so the two are read and checked against each other rather than trusting
+ * either alone.
+ */
+function nodeVersionFromWorkflow() {
+  const workflow = readFileSync('.github/workflows/ci.yml', 'utf8')
+  const pins = [...workflow.matchAll(/node-version:\s*'([^']+)'/g)].map((match) => match[1])
+  if (pins.length === 0) {
+    throw new Error('ci.yml names no node-version, so there is no fact to capture')
+  }
+  const distinct = new Set(pins)
+  if (distinct.size > 1) {
+    throw new Error(`ci.yml's jobs disagree about node-version: ${[...distinct].join(', ')}`)
+  }
+  return pins[0]
+}
+
 const output = demoOutput()
 if (output.length < 200) {
   console.error('the demo printed almost nothing, so there is no card to build')
@@ -58,7 +80,7 @@ if (tags.length > 0 && tags[0] !== `v${pkg.version}`) {
 
 const facts = {
   tests: testTotal(),
-  node: '24',
+  node: nodeVersionFromWorkflow(),
   release,
   captured: new Date().toISOString().slice(0, 10),
   runUrl: process.env.GITHUB_RUN_ID

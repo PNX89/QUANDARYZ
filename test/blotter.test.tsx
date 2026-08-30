@@ -9,6 +9,8 @@
  * property test usually reports, but how many distinct screens a user can be shown for one
  * script of actions. Above one means the network decides what they see.
  */
+import { readFileSync } from 'node:fs'
+
 import { render, screen } from '@testing-library/react'
 import { act } from 'react'
 import { describe, expect, it } from 'vitest'
@@ -109,5 +111,30 @@ describe('the blotter under out-of-order delivery', () => {
         shot.split('\n').filter((line) => line.startsWith('row|')).length === 41,
     )
     expect(wrong, 'no ordering produced the narrowed rows under the whole-book header').toBeDefined()
+  })
+})
+
+/** Counts small enough that the docstring above writes them as words. */
+const REQUEST_COUNT_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five']
+
+describe('the module docstring', () => {
+  it('names exactly as many requests as Transport declares, and no column the component does not render', () => {
+    // The docstring once said "three independently guarded requests" and credited a mark column
+    // to a second request, while Transport has always declared two methods and the render below
+    // it has never had a mark column. Counting Transport's own methods, rather than retyping a
+    // number here, is what keeps this test from drifting the same way the prose did.
+    const source = readFileSync('src/blotter.tsx', 'utf8')
+    const docstring = source.slice(0, source.indexOf('*/') + 2)
+    const transportMethods = [...source.matchAll(/^ {2}(\w+)\(account: string\):/gm)].map((match) => match[1])
+    expect(transportMethods.length, "could not find Transport's own methods to count").toBeGreaterThan(0)
+    const word = REQUEST_COUNT_WORDS[transportMethods.length]
+    expect(word, `add a word for ${transportMethods.length} to REQUEST_COUNT_WORDS`).toBeDefined()
+    expect(
+      docstring,
+      `the docstring does not say "${word} independently guarded request(s)"`,
+    ).toContain(`${word} independently guarded request`)
+    expect(docstring, 'the docstring still promises a mark column the component does not render').not.toMatch(
+      /mark column/,
+    )
   })
 })

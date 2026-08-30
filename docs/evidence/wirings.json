@@ -11,11 +11,11 @@
       "cardinality": 4,
       "fullyScheduled": true
     },
-    "query-default": {
+    "query-keep-previous": {
       "fullyScheduled": false,
       "reason": "this library schedules work the explorer does not control, so the count is a lower bound that moves between runs and is not committed"
     },
-    "query-keep-previous": {
+    "query-default": {
       "fullyScheduled": false,
       "reason": "this library schedules work the explorer does not control, so the count is a lower bound that moves between runs and is not committed"
     }
