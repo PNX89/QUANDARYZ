@@ -50,14 +50,33 @@ export async function explore(
     fc.asyncProperty(fc.scheduler(), async (scheduler) => {
       const digest = await settle(scheduler)
       runs += 1
-      orders.add(scheduler.report().map((item) => item.label).join(' then '))
+      const ordering = reproduction(scheduler)
+      orders.add(ordering)
       // The ordering that produced this screen is kept, so a reader is given a way to reproduce
       // it rather than a count they have to trust.
-      if (!screens.has(digest)) screens.set(digest, scheduler.report().map((item) => item.label).join(' then '))
+      if (!screens.has(digest)) screens.set(digest, ordering)
       return true
     }),
     { numRuns: options.runs, ...(options.seed === undefined ? {} : { seed: options.seed }) },
   )
 
   return { screens, orderings: orders.size, runs }
+}
+
+/**
+ * The delivery order this run took, written so that following it lands on one screen.
+ *
+ * THE TASK ID IS IN THE STRING BECAUSE THE LABEL ALONE IS NOT AN IDENTITY. `report()` labels a
+ * scheduled function by its argument list, so the blotter's two endpoints, both asked about the
+ * same account, are both `("desk")`. Twenty four real orderings were reported under six names,
+ * four of those six covered more than one settled screen, and the recipe printed by the demo and
+ * published on the card was one of the ambiguous ones: a reader who followed it got the screen
+ * the transcript describes or the opposite tear, on a coin flip. With the id in front, the same
+ * four hundred runs produce twenty four names and not one of them covers two screens.
+ */
+function reproduction(scheduler: fc.Scheduler): string {
+  return scheduler
+    .report()
+    .map((item) => `${item.taskId}:${item.label}`)
+    .join(' then ')
 }

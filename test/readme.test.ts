@@ -11,10 +11,50 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
+import { NAME_RULES } from '../src/precondition'
+
 const README = readFileSync('README.md', 'utf8')
 const WIRINGS = JSON.parse(readFileSync('docs/evidence/wirings.json', 'utf8'))
 const DEMO = readFileSync('docs/evidence/demo.txt', 'utf8')
 const WORKFLOW = readFileSync('.github/workflows/ci.yml', 'utf8')
+
+/** Counts small enough that the page writes them as words. */
+const IN_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
+
+/** The wiring table, as the name in each row against the figure printed beside it. */
+function wiringTable(): Record<string, string> {
+  const rows: Record<string, string> = {}
+  for (const match of README.matchAll(/^\|\s*`([a-z-]+)`[^|]*\|\s*([^|]+?)\s*\|$/gm)) {
+    rows[match[1]!] = match[2]!
+  }
+  return rows
+}
+
+/**
+ * The figure the page states inside the phrase that carries it.
+ *
+ * The phrase is required to be there: a page that has stopped making the claim is not a page
+ * that still holds it, and reporting "undefined is not 4" would send a reader looking for a
+ * drifted number rather than a deleted sentence.
+ */
+function stated(pattern: RegExp): string | undefined {
+  const found = README.match(pattern)
+  expect(found, `the page no longer says anything matching ${pattern.source}`).not.toBeNull()
+  return found?.[1]
+}
+
+/** A markdown table read as rows of trimmed cells, found by the label in its header. */
+function tableRows(header: string): string[][] {
+  const lines = README.split('\n')
+  const start = lines.findIndex((line) => line.startsWith(header))
+  expect(start, `the page no longer carries a table headed ${header}`).toBeGreaterThan(-1)
+  const rows: string[][] = []
+  for (const line of lines.slice(start + 2)) {
+    if (!line.startsWith('|')) break
+    rows.push(line.split('|').map((cell) => cell.trim()))
+  }
+  return rows
+}
 
 /** The page minus the generated cross-link footer, which describes other repositories. */
 function ownProse(): string {
@@ -26,13 +66,70 @@ function ownProse(): string {
 
 describe('the front page', () => {
   it('states the numbers this repository measured', () => {
-    const claims: Record<string, string> = {
-      'the guarded cardinality': String(WIRINGS.wirings['effect-guarded'].cardinality),
-      'the unguarded cardinality': String(WIRINGS.wirings['effect-unguarded'].cardinality),
-      'the orderings explored': String(WIRINGS.runs),
+    // EACH FIGURE COMPARED WHERE THE PAGE STATES IT, never searched for across the page. This
+    // test built its claims as `String(cardinality)` and asserted `README.includes(value)`,
+    // which for a single-digit count is a one-character substring search over nine kilobytes of
+    // prose. The unguarded count could be changed from four to two everywhere the page states
+    // it and this still passed, satisfied by the `node-24-blue` badge URL. Four of the ten
+    // digits appear nowhere on the page, so whether a drift was caught came down to which digit
+    // it drifted to.
+    const table = wiringTable()
+    expect(Object.keys(table).sort()).toEqual(Object.keys(WIRINGS.wirings).sort())
+    for (const [wiring, entry] of Object.entries(WIRINGS.wirings) as [
+      string,
+      { cardinality?: number; fullyScheduled: boolean },
+    ][]) {
+      if (entry.fullyScheduled) {
+        expect(table[wiring], `the wiring table's row for ${wiring}`).toBe(String(entry.cardinality))
+      } else {
+        // The honest half: no count was committed for these, so none may be printed either.
+        expect(table[wiring], `the page prints a count for ${wiring}`).not.toMatch(/\d/)
+      }
     }
-    const missing = Object.entries(claims).filter(([, value]) => !README.includes(value))
-    expect(missing, `the page no longer states: ${JSON.stringify(missing)}`).toEqual([])
+
+    // The headline figure, in the sentence a reader takes it from.
+    expect(stated(/the answer is (\d+)/)).toBe(
+      String(WIRINGS.wirings['effect-unguarded'].cardinality),
+    )
+
+    // The search behind that table, stated where the table is introduced.
+    expect(stated(/explored over (\d+) runs/)).toBe(String(WIRINGS.runs))
+    expect(stated(/repeated (\d+) times/)).toBe(String(WIRINGS.repeats))
+
+    // The precondition's rule count, from the list the precondition runs.
+    expect(stated(/(\w+) axe-core rules/)).toBe(IN_WORDS[NAME_RULES.length])
+  })
+
+  it('reports a property result only for a subject that property can see', () => {
+    // A PASS OVER AN EMPTY NODE SET IS NOT A PASS. Attribution is containment over annotated
+    // nodes, so a subject declaring none returns the empty list whatever was delivered. The
+    // blotter declares none, and this table published `passes` for it: the absence of a result
+    // printed in the same column, in the same words, as a result.
+    const subjects: Record<string, string> = {
+      'order book': 'src/book.tsx',
+      'position blotter': 'src/blotter.tsx',
+      'risk panel': 'src/risk.tsx',
+      'fill feed': 'src/fills.tsx',
+    }
+    const rows = tableRows('| subject |')
+    // Pinned by name and by number, so deleting a row covers one subject fewer rather than
+    // quietly passing with three.
+    expect(rows.map((cells) => cells[1])).toEqual(Object.keys(subjects))
+    for (const cells of rows) {
+      const path = subjects[cells[1]!]!
+      const declares = readFileSync(path, 'utf8').includes('data-consequential')
+      const cell = cells[3]!
+      if (declares) {
+        expect(cell, `${path} declares consequential nodes and the table reports ${cell}`).toMatch(
+          /passes|fires/,
+        )
+      } else {
+        expect(
+          cell,
+          `${path} declares no consequential node, so "${cell}" is not a result it can have`,
+        ).not.toMatch(/passes|fires/)
+      }
+    }
   })
 
   it('says which wirings the harness does not fully control, and does not print a count for them', () => {

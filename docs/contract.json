@@ -1,0 +1,6 @@
+{
+  "number": "states the numbers this repository measured",
+  "command": "offers only commands CI runs",
+  "output": "quotes only lines the demo actually printed",
+  "reference": "points only at paths that exist"
+}

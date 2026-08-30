@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest'
 import { Book, type Level } from '../src/book'
 import { RiskPanel, type LimitCheck } from '../src/risk'
 import { Unnamed } from '../src/unnamed'
-import { unnamed } from '../src/precondition'
+import { NAME_RULES, unnamed } from '../src/precondition'
 import { digest, fingerprint } from '../src/screen'
 
 const LADDER: readonly Level[] = [{ price: 61000.75, size: 2 }]
@@ -35,23 +35,29 @@ describe('the precondition', () => {
   })
 
   it('refuses a subject whose tree cannot describe it', async () => {
-    // WATCHED REFUSING. A precondition nobody has seen reject anything is a precondition that
-    // might be checking nothing at all, which is exactly the failure it exists to prevent.
+    // WATCHED REFUSING, AND BY EVERY RULE IT RUNS. A precondition nobody has seen reject
+    // anything is a precondition that might be checking nothing at all, which is exactly the
+    // failure it exists to prevent, and three quarters of this one was in that state: the blind
+    // subject carried a button and nothing else, so `link-name`, `input-button-name` and
+    // `aria-command-name` had never refused a thing and could be dropped with the suite green.
     const view = render(<Unnamed open />)
     const found = await unnamed(screen.getByRole('region', { name: 'Unnamed' }))
-    expect(found.length).toBeGreaterThan(0)
-    expect(found.map((entry) => entry.id)).toContain('button-name')
+    expect(new Set(found.map((entry) => entry.id))).toEqual(new Set(NAME_RULES))
     view.unmount()
   })
 
-  it('checks only the rules that decide whether two screens can be told apart', async () => {
-    // Running the whole axe suite would fail subjects for contrast or landmarks, which are real
-    // accessibility findings and have nothing to do with distinguishing two screens. Mixing them
-    // would make this a compliance gate wearing a measurement's clothes.
-    const source = (await import('node:fs')).readFileSync('src/precondition.ts', 'utf8')
-    expect(source).toContain("runOnly")
-    expect(source).toContain('button-name')
-    expect(source).not.toContain('color-contrast')
+  it('checks only the rules that decide whether two screens can be told apart', () => {
+    // PINNED BY NAME AND BY LENGTH, against the exported list rather than against the text of
+    // the file that declares it. The version of this test that read src/precondition.ts as a
+    // string and asserted the names appeared in it was satisfied by a comment: the option was
+    // replaced with a broad tag sweep, which is the compliance gate this module exists not to
+    // be, the names were written above it in a comment, and every gate stayed green.
+    expect([...NAME_RULES]).toEqual([
+      'button-name',
+      'link-name',
+      'input-button-name',
+      'aria-command-name',
+    ])
   })
 })
 
