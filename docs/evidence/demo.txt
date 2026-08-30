@@ -1,8 +1,8 @@
 A trader narrows the account filter from the whole book to one desk.
 The rows come from one endpoint and the exposure figure in the header from another.
 
-  guarded     1 distinct screen across 40 orderings
-  unguarded   4 distinct screens across 40 orderings
+  guarded     1 distinct screen across 6 distinct orderings in 40 runs
+  unguarded   4 distinct screens across 6 distinct orderings in 40 runs
 
   The guarded wiring applies the flag react.dev documents three times. It works.
   Without it, which screen the trader gets is decided by the network.
