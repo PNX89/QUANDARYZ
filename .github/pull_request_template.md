@@ -8,7 +8,11 @@
 
 - [ ] Every gate passes locally, not just the tests:
       `npm ci`
+      `npm run typecheck`
       `npm test`
+      `npm run demo`
+      `npx playwright install --with-deps chromium`
+      `npm run test:browser`
 - [ ] No number in the README was edited by hand. Anything generated was regenerated.
 - [ ] The prose still describes the code. No claim in the README has quietly stopped being true.
 - [ ] No em dash and no en dash anywhere in the diff, prose or code.
